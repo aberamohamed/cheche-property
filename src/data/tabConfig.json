@@ -1,0 +1,107 @@
+[
+    {
+        "name": "home",
+        "label": {
+            "en": "Home",
+            "am": "መነሻ",
+            "om": "Man'ee",
+            "som": "Hoyga",
+            "tig": "ገዛ"
+        },
+        "icon": {
+            "ios": {
+                "default": "house",
+                "selected": "house.fill"
+            },
+            "android": {
+                "family": "MaterialIcons",
+                "active": "home",
+                "inactive": "home"
+            }
+        }
+    },
+    {
+        "name": "history",
+        "label": {
+            "en": "History",
+            "am": "ታሪክ",
+            "om": "Seenaa",
+            "som": "Taariikh",
+            "tig": "ታሪክ"
+        },
+        "icon": {
+            "ios": {
+                "default": "clock",
+                "selected": "clock.fill"
+            },
+            "android": {
+                "family": "Ionicons",
+                "active": "time-outline",
+                "inactive": "time"
+            }
+        }
+    },
+    {
+        "name": "services",
+        "label": {
+            "en": "Services",
+            "am": "አገልግሎቶች",
+            "om": "Tajaajila",
+            "som": "Adeegyada",
+            "tig": "አገልግሎት"
+        },
+        "icon": {
+            "ios": {
+                "default": "chart.bar",
+                "selected": "chart.bar.fill"
+            },
+            "android": {
+                "family": "Ionicons",
+                "active": "apps-outline",
+                "inactive": "apps"
+            }
+        }
+    },
+    {
+        "name": "profile",
+        "label": {
+            "en": "Profile",
+            "am": "መገለጫ",
+            "om": "Profaayilii",
+            "som": "Profile",
+            "tig": "መገለፊ"
+        },
+        "icon": {
+            "ios": {
+                "default": "person.circle",
+                "selected": "person.circle.fill"
+            },
+            "android": {
+                "family": "Ionicons",
+                "active": "person-circle-outline",
+                "inactive": "person-circle"
+            }
+        }
+    },
+    {
+        "name": "search",
+        "label": {
+            "en": "AI",
+            "am": "AI",
+            "om": "AI",
+            "som": "AI",
+            "tig": "AI"
+        },
+        "icon": {
+            "ios": {
+                "default": "magnifyingglass",
+                "selected": "magnifyingglass"
+            },
+            "android": {
+                "family": "Ionicons",
+                "active": "search",
+                "inactive": "search"
+            }
+        }
+    }
+]
