@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen } from "../../components/Screen";
 import { Colors } from "../../constants/Colors";
 import { colors, radius, spacing, layout } from "../../utils/theme";
+import { tabHeaderFabContentPaddingTop } from "../../utils/tabHeaderFab";
 import { useProperties } from "../../hooks/useProperties";
 import { useMinimumDisplay } from "../../hooks/useMinimumDisplay";
 import { useFavoritesStore } from "../../store/favoritesStore";
@@ -99,9 +100,12 @@ export const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         onScroll={handleScroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: tabHeaderFabContentPaddingTop(insets.top) }
+        ]}
       >
-        <View style={[styles.heroWrap, { paddingTop: (Platform.OS === 'ios' && Number(Platform.Version) >= 26) ? insets.top + spacing.lg + 20 : spacing.lg + 10 }]}>
+        <View style={styles.heroWrap}>
           <LinearGradient
             colors={[
               Colors.palette.primary[700],

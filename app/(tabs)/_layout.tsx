@@ -1,34 +1,24 @@
+import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
-import { Redirect } from "expo-router";
-import { withLayoutContext } from "expo-router";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useRouter } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useAuthStore } from "../../src/store/authStore";
-import CustomTabBar from "../../src/components/CustomTabBar";
-import { TabHeader } from "../../src/components/TabHeader";
 import { colors } from "../../src/utils/theme";
-
-const BottomTabsNavigator = createBottomTabNavigator();
-const ExpoBottomTabs = withLayoutContext(BottomTabsNavigator.Navigator);
 
 export default function TabsLayout() {
   const token = useAuthStore((state) => state.token);
-  const useCustomTabBar = Platform.OS === "android" || (Platform.OS === "ios" && Number(Platform.Version) < 26);
+  const router = useRouter();
+  const redirected = useRef(false);
+
+  useEffect(() => {
+    if (!token && !redirected.current) {
+      redirected.current = true;
+      router.replace("/login");
+    }
+  }, [router, token]);
 
   if (!token) {
-    return <Redirect href="/login" />;
-  }
-
-  if (useCustomTabBar) {
-    return (
-      <ExpoBottomTabs
-        screenOptions={{
-          headerShown: true,
-          header: () => <TabHeader />
-        }}
-        tabBar={(props) => <CustomTabBar {...props} />}
-      />
-    );
+    return null;
   }
 
   return (
@@ -39,6 +29,7 @@ export default function TabsLayout() {
         fontSize: 12,
         fontWeight: "600"
       }}
+      labelVisibilityMode={Platform.OS === "android" ? "labeled" : undefined}
       disableTransparentOnScrollEdge
     >
       <NativeTabs.Trigger name="home">

@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "../../components/Screen";
 import { colors, radius, spacing } from "../../utils/theme";
-import { ListingFormValues, ListingCategory, PropertyType } from "../../types";
+import { ListingFormValues, ListingCategory, ListingAttachment, PropertyType } from "../../types";
 import { Input } from "../../components/Input";
 import { Button } from "../../components/Button";
 import { FilterChip } from "../../components/FilterChip";
@@ -29,7 +30,15 @@ const schema = Yup.object({
   bedrooms: Yup.number().min(0).required("Bedrooms is required"),
   bathrooms: Yup.number().min(0).required("Bathrooms is required"),
   area: Yup.number().positive().required("Area is required"),
-  images: Yup.array().of(Yup.string().required()).min(1, "Add at least one image").required()
+  images: Yup.array().of(Yup.string().required()).min(1, "Add at least one image").required(),
+  housePlanDocuments: Yup.array().of(
+    Yup.object({
+      name: Yup.string().required(),
+      uri: Yup.string().required(),
+      mimeType: Yup.string().optional(),
+      size: Yup.number().optional()
+    })
+  )
 });
 
 const initialValues: ListingFormValues = {
@@ -38,11 +47,12 @@ const initialValues: ListingFormValues = {
   description: "",
   location: "",
   type: "",
-  category: "rent",
+  category: "sale",
   bedrooms: "1",
   bathrooms: "1",
   area: "80",
-  images: []
+  images: [],
+  housePlanDocuments: []
 };
 
 export const CreateEditListingScreen = () => {
@@ -54,6 +64,19 @@ export const CreateEditListingScreen = () => {
   const showLoading = useMinimumDisplay(loadingProperty, 3000);
   const createMutation = useCreatePropertyMutation();
   const updateMutation = useUpdatePropertyMutation(propertyId);
+  const handleListingTypePress = (item: ListingCategory, setFieldValue: (field: string, value: string) => void) => {
+    if (item === "rent") {
+      requestAnimationFrame(() => {
+        router.push({
+          pathname: "/webview",
+          params: { url: "https://realty.cheche.et/dashboard", title: "Rent dashboard" }
+        });
+      });
+      return;
+    }
+
+    setFieldValue("category", item);
+  };
 
   useEffect(() => {
     if ((createMutation.isError || updateMutation.isError) && (createMutation.error || updateMutation.error)) {
@@ -89,7 +112,8 @@ export const CreateEditListingScreen = () => {
         bedrooms: String(existing.bedrooms),
         bathrooms: String(existing.bathrooms),
         area: String(existing.area),
-        images: existing.images
+        images: existing.images,
+        housePlanDocuments: existing.housePlanDocuments ?? []
       }
     : initialValues;
 
@@ -108,8 +132,49 @@ export const CreateEditListingScreen = () => {
           router.back();
         }}
       >
-        {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched }) => (
+        {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched }) => {
+          const pickHousePlanDocuments = async () => {
+            const result = await DocumentPicker.getDocumentAsync({
+              copyToCacheDirectory: true,
+              multiple: true,
+              type: [
+                "application/pdf",
+                "image/*",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              ]
+            });
+
+            if (!result.canceled && result.assets?.length) {
+              const attachments: ListingAttachment[] = result.assets.map((asset) => ({
+                name: asset.name,
+                uri: asset.uri,
+                mimeType: asset.mimeType,
+                size: asset.size
+              }));
+
+              setFieldValue("housePlanDocuments", [...values.housePlanDocuments, ...attachments]);
+            }
+          };
+
+          return (
           <>
+            <View style={styles.listingTypePanel}>
+              <Text style={styles.groupLabel}>Listing type</Text>
+              <View style={styles.chips}>
+                {categories.map((item) => (
+                  <FilterChip
+                    key={item}
+                    label={item === "rent" ? "For rent" : "For sale"}
+                    selected={values.category === item}
+                    onPress={() => handleListingTypePress(item, setFieldValue)}
+                  />
+                ))}
+              </View>
+              <Text style={styles.helperText}>For rent listings are managed in the web dashboard.</Text>
+              {touched.category && errors.category ? <Text style={styles.error}>{errors.category}</Text> : null}
+            </View>
+
             <Input
               label="Title"
               placeholder="Modern apartment near the city center"
@@ -166,18 +231,44 @@ export const CreateEditListingScreen = () => {
               error={touched.location ? errors.location : undefined}
             />
 
-            <Text style={styles.groupLabel}>Listing type</Text>
-            <View style={styles.chips}>
-              {categories.map((item) => (
-                <FilterChip
-                  key={item}
-                  label={item === "rent" ? "For rent" : "For sale"}
-                  selected={values.category === item}
-                  onPress={() => setFieldValue("category", item)}
-                />
-              ))}
-            </View>
-            {touched.category && errors.category ? <Text style={styles.error}>{errors.category}</Text> : null}
+            {values.category === "sale" ? (
+              <>
+                <Text style={styles.groupLabel}>House plan document</Text>
+                <Text style={styles.helperText}>Upload a floor plan, PDF, or supporting document for sale listings.</Text>
+                <Button title="Add house plan" variant="secondary" onPress={pickHousePlanDocuments} />
+
+                {values.housePlanDocuments.length > 0 ? (
+                  <View style={styles.documentList}>
+                    {values.housePlanDocuments.map((file, index) => (
+                      <View key={`${file.uri}-${index}`} style={styles.documentItem}>
+                        <View style={styles.documentIcon}>
+                          <Ionicons name="document-text-outline" size={16} color={colors.primary} />
+                        </View>
+                        <View style={styles.documentMeta}>
+                          <Text style={styles.documentName} numberOfLines={1}>
+                            {file.name}
+                          </Text>
+                          <Text style={styles.documentHint}>
+                            {file.mimeType ?? "Document"}{file.size ? ` • ${(file.size / 1024 / 1024).toFixed(1)} MB` : ""}
+                          </Text>
+                        </View>
+                        <Pressable
+                          onPress={() =>
+                            setFieldValue(
+                              "housePlanDocuments",
+                              values.housePlanDocuments.filter((_, documentIndex) => documentIndex !== index)
+                            )
+                          }
+                          style={styles.documentRemove}
+                        >
+                          <Ionicons name="close" size={14} color={colors.textSoft} />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </>
+            ) : null}
 
             <Text style={styles.groupLabel}>Property type</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -264,7 +355,8 @@ export const CreateEditListingScreen = () => {
               />
             </View>
           </>
-        )}
+        );
+        }}
       </Formik>
     </Screen>
   );
@@ -282,16 +374,31 @@ const styles = StyleSheet.create({
     minHeight: 120
   },
   groupLabel: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
     color: colors.text,
-    fontSize: 14,
-    fontWeight: "800"
+    fontSize: 16,
+    fontWeight: "900"
   },
   chips: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
     marginBottom: spacing.md
+  },
+  listingTypePanel: {
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.xl,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  helperText: {
+    marginTop: -spacing.xs,
+    marginBottom: spacing.md,
+    color: colors.textSoft,
+    fontSize: 13,
+    fontWeight: "600"
   },
   error: {
     marginTop: -spacing.sm,
@@ -331,5 +438,50 @@ const styles = StyleSheet.create({
   saveAction: {
     marginTop: spacing.xl,
     marginBottom: spacing.xl
+  },
+  documentList: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md
+  },
+  documentItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  documentIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft
+  },
+  documentMeta: {
+    flex: 1
+  },
+  documentName: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: "700"
+  },
+  documentHint: {
+    marginTop: 2,
+    color: colors.textSoft,
+    fontSize: 12,
+    fontWeight: "500"
+  },
+  documentRemove: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surfaceMuted
   }
 });

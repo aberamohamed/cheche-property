@@ -1,0 +1,7 @@
+** BUILD FAILED **
+
+
+The following build commands failed:
+	Ld /Users/ab/Library/Developer/Xcode/DerivedData/ChecheProperty-eldzkgwuaevojpeehxjmukipyhqq/Build/Products/Debug-iphonesimulator/ChecheProperty.app/ChecheProperty.debug.dylib normal (in target 'ChecheProperty' from project 'ChecheProperty')
+	Building workspace ChecheProperty with scheme ChecheProperty and configuration Debug
+(2 failures)

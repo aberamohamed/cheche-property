@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "../../components/Screen";
+import { SearchChromeFab } from "../../components/SearchChromeFab";
 import { colors } from "../../utils/theme";
 import { ListingCategory, Property, PropertyType } from "../../types";
 import { mockProperties } from "../../data/mockProperties";
@@ -108,19 +108,18 @@ export const SearchMapScreen = () => {
         ))}
       </MapView>
 
-      <View style={styles.bottomPillWrap} pointerEvents="box-none">
-        <View style={styles.bottomPill}>
-          <Pressable style={styles.pillAction} onPress={() => router.back()}>
-            <Ionicons name="list-outline" size={18} color={colors.primary} />
-            <Text style={styles.pillText}>List</Text>
-          </Pressable>
-          <View style={styles.pillDivider} />
-          <Pressable style={styles.pillAction} onPress={() => router.push("/favorites")}>
-            <Ionicons name="bookmark-outline" size={18} color={colors.primary} />
-            <Text style={styles.pillText}>Save</Text>
-          </Pressable>
-        </View>
-      </View>
+      <SearchChromeFab
+        left={{
+          label: "List",
+          icon: "list-outline",
+          onPress: () => router.back()
+        }}
+        right={{
+          label: "Save",
+          icon: "bookmark-outline",
+          onPress: () => router.push("/favorites")
+        }}
+      />
     </Screen>
   );
 };
@@ -154,45 +153,4 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: 0.2
   },
-  bottomPillWrap: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 92,
-    alignItems: "center"
-  },
-  bottomPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 4,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.98)",
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: colors.text,
-    shadowOpacity: 0.14,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 18,
-    elevation: 8
-  },
-  pillAction: {
-    minWidth: 100,
-    minHeight: 46,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    borderRadius: 999
-  },
-  pillText: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: "800"
-  },
-  pillDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: colors.border
-  }
 });

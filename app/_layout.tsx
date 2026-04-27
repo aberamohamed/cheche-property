@@ -66,6 +66,18 @@ export default function RootLayout() {
                 }}
               />
               <Stack.Screen
+                name="dashboard"
+                options={{
+                  title: "Rent dashboard"
+                }}
+              />
+              <Stack.Screen
+                name="webview"
+                options={{
+                  title: "Rent dashboard"
+                }}
+              />
+              <Stack.Screen
                 name="chat/[propertyId]"
                 options={{
                   title: "Chat",

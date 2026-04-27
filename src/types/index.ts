@@ -10,12 +10,13 @@ export type PropertyType =
 export interface User {
   id: string;
   name: string;
-  email: string;
+  phone?: string;
+  email?: string;
   token: string;
 }
 
 export interface AuthCredentials {
-  email: string;
+  mobile: string;
   password: string;
   name?: string;
 }
@@ -38,6 +39,7 @@ export interface Property {
   longitude: number;
   agentName: string;
   agentPhone: string;
+  housePlanDocuments?: ListingAttachment[];
   createdAt: string;
 }
 
@@ -61,6 +63,14 @@ export interface ListingFormValues {
   bathrooms: string;
   area: string;
   images: string[];
+  housePlanDocuments: ListingAttachment[];
+}
+
+export interface ListingAttachment {
+  name: string;
+  uri: string;
+  mimeType?: string;
+  size?: number;
 }
 
 export interface Message {

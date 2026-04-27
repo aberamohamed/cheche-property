@@ -18,6 +18,8 @@ import { PropertyType } from "../../types";
 import { SearchBar } from "../../components/SearchBar";
 import { SearchFloatingActions } from "../../components/SearchFloatingActions";
 import { Colors } from "src/constants/Colors";
+import { useTabsScrollBlurTarget } from "../../contexts/TabsScrollBlurContext";
+import { tabHeaderFabContentPaddingTop } from "../../utils/tabHeaderFab";
 
 const propertyTypes: Array<PropertyType | "All"> = [
   "All",
@@ -43,7 +45,12 @@ export const SearchScreen = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [filtersVisible, setFiltersVisible] = useState(true);
   const [stickySearch, setStickySearch] = useState(false);
-  const searchBarYRef = useRef(0);
+  /** Scroll offset at which the hero has left the top; used for sticky search chrome. */
+  const stickyScrollThresholdRef = useRef(0);
+  const tabBlurTargetRef = useTabsScrollBlurTarget();
+  /** Android: only one BlurView may use a given `blurTarget`; `TabHeaderFab` already blurs this ref. */
+  const searchChromeBlurTargetRef =
+    Platform.OS === "ios" ? tabBlurTargetRef : undefined;
 
   const filters = useMemo(
     () => ({
@@ -73,7 +80,7 @@ export const SearchScreen = () => {
 
   const handleScroll = (event: NativeSyntheticEvent<any>) => {
     const y = event.nativeEvent.contentOffset.y;
-    const threshold = searchBarYRef.current;
+    const threshold = stickyScrollThresholdRef.current;
 
     if (threshold <= 0) {
       return;
@@ -149,13 +156,49 @@ export const SearchScreen = () => {
     <View style={styles.page}>
       <Screen scrollable={false} horizontalPadding={false}>
         <ScrollView
-          stickyHeaderIndices={[1]}
+          style={styles.scroll}
+          stickyHeaderIndices={[0]}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
           onScroll={handleScroll}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: tabHeaderFabContentPaddingTop(insets.top) }
+          ]}
         >
-          <View style={[styles.heroWrap, { paddingTop: (Platform.OS === 'ios' && Number(Platform.Version) >= 26) ? insets.top + spacing.lg + 20 : spacing.lg + 10 }]}>
+          <View
+            style={[
+              styles.stickyShell,
+              stickySearch && {
+                
+                marginHorizontal: -layout.pagePadding,
+                paddingHorizontal: layout.pagePadding,
+                borderRadius: 0,
+                borderBottomWidth: 1,
+                borderBottomColor: "rgba(255,255,255,0.1)",
+                backgroundColor: "transparent"
+              },
+              stickySearch ? styles.stickyShellActive : null
+            ]}
+          >
+            {stickySearch && (
+              <View
+                style={StyleSheet.absoluteFill}
+              />
+            )}
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              blurTargetRef={searchChromeBlurTargetRef ?? undefined}
+            />
+          </View>
+
+          <View
+            style={styles.heroWrap}
+            onLayout={(event) => {
+              stickyScrollThresholdRef.current = event.nativeEvent.layout.y;
+            }}
+          >
             <LinearGradient
               colors={[
                 Colors.palette.primary[700],
@@ -172,32 +215,6 @@ export const SearchScreen = () => {
                 Use smart filters, price ranges, and map context to explore rentals and homes.
               </Text>
             </LinearGradient>
-          </View>
-
-          <View
-            onLayout={(event) => {
-              searchBarYRef.current = event.nativeEvent.layout.y;
-            }}
-            style={[
-              styles.stickyShell,
-              stickySearch && {
-                paddingTop: (Platform.OS === 'ios' && Number(Platform.Version) >= 26) ? insets.top + spacing.sm : 0,
-                marginHorizontal: -layout.pagePadding,
-                paddingHorizontal: layout.pagePadding,
-                borderRadius: 0,
-                borderBottomWidth: 1,
-                borderBottomColor: "rgba(255,255,255,0.1)",
-                backgroundColor: "transparent"
-              },
-              stickySearch ? styles.stickyShellActive : null
-            ]}
-          >
-            {stickySearch && (
-              <View
-                style={StyleSheet.absoluteFill}
-              />
-            )}
-            <SearchBar value={query} onChangeText={setQuery} />
           </View>
 
           {filtersVisible ? (
@@ -269,6 +286,7 @@ export const SearchScreen = () => {
       <SearchFloatingActions
         mapActive={false}
         filtersActive={filtersVisible}
+        blurTargetRef={searchChromeBlurTargetRef ?? undefined}
         onMapPress={() =>
           router.push({
             pathname: "/search/map",
@@ -285,6 +303,9 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     position: "relative"
+  },
+  scroll: {
+    flex: 1
   },
   content: {
     paddingHorizontal: layout.pagePadding,

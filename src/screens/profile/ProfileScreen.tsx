@@ -1,4 +1,4 @@
-import { Alert, FlatList, Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen } from "../../components/Screen";
 import { Colors } from "../../constants/Colors";
 import { colors, radius, spacing } from "../../utils/theme";
+import { tabHeaderFabContentPaddingTop } from "../../utils/tabHeaderFab";
 import { useAuthStore } from "../../store/authStore";
 import { useFavoritesStore } from "../../store/favoritesStore";
 import { useProperties } from "../../hooks/useProperties";
@@ -48,7 +49,7 @@ export const SettingsScreen = () => {
 
   return (
     <Screen horizontalPadding={false}>
-      <View style={[styles.page, { paddingTop: (Platform.OS === 'ios' && Number(Platform.Version) >= 26) ? insets.top + spacing.lg + 20 : spacing.lg + 40 }]}>
+      <View style={[styles.page, { paddingTop: tabHeaderFabContentPaddingTop(insets.top) }]}>
         <View style={styles.heroCard}>
           <View style={styles.avatarShell}>
             <View style={styles.avatarGlow} />
@@ -65,7 +66,7 @@ export const SettingsScreen = () => {
           <Text style={styles.name}>
             {user?.name ?? "Abera Mohamed"} <Text style={styles.verified}>✓</Text>
           </Text>
-          <Text style={styles.email}>{user?.email ?? "[EMAIL_ADDRESS]"}</Text>
+          <Text style={styles.email}>{user?.phone ?? user?.email ?? "[PHONE_NUMBER]"}</Text>
 
           <View style={styles.statsCard}>
             <View style={styles.statItem}>

@@ -7,12 +7,17 @@ import { useRouter } from "expo-router";
 import { Screen } from "../../components/Screen";
 import { colors, fontSizes, radius, spacing } from "../../utils/theme";
 import { Button } from "../../components/Button";
+import { PhoneInput } from "../../components/PhoneInput";
 import { Input } from "../../components/Input";
 import { useLoginMutation } from "../../hooks/useAuth";
 import { useAuthStore } from "../../store/authStore";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 
 const schema = Yup.object({
-  email: Yup.string().email("Enter a valid email").required("Email is required"),
+  mobile: Yup.string()
+    .matches(/^9\d{8}$/, "Enter a valid Ethiopian phone number")
+    .required("Phone number is required"),
   password: Yup.string().min(6, "At least 6 characters").required("Password is required")
 });
 
@@ -20,6 +25,7 @@ export const LoginScreen = () => {
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
   const mutation = useLoginMutation();
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -52,49 +58,46 @@ export const LoginScreen = () => {
               <Image source={require("../../../assets/icon.png")} style={styles.logo} resizeMode="contain" />
             </View>
           </View>
-          <View style={styles.copyBlock}>
-            {/* <View style={styles.pill}>
-              <Text style={styles.pillText}>Relty Ethiopia</Text>
-            </View> */}
-            <Text style={styles.title}>Welcome back.</Text>
-            <Text style={styles.subtitle}>
-              Sign in to browse premium rentals, trusted agents, and carefully curated property listings.
-            </Text>
-          </View>
-
         </View>
 
         <View style={styles.cardShell}>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign in</Text>
-            <Text style={styles.cardSubtitle}>Use your email and password to continue.</Text>
+            <Text style={styles.cardSubtitle}>Use your phone number and password to continue.</Text>
             <Formik
-              initialValues={{ email: "abera@cheche.et", password: "password123" }}
+              initialValues={{ mobile: "", password: "" }}
               validationSchema={schema}
               onSubmit={(values) => mutation.mutate(values)}
             >
               {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
                 <>
-                  <Input
-                    label="Email"
-                    placeholder="you@example.com"
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    value={values.email}
-                    onChangeText={handleChange("email")}
-                    onBlur={handleBlur("email")}
-                    error={touched.email ? errors.email : undefined}
+                  <PhoneInput
+                    label="Phone Number"
+                    placeholder="9XXXXXXXX"
+                    helperText="Enter without country code (e.g., 911234567)"
+                    value={values.mobile}
+                    onChangeText={handleChange("mobile")}
+                    onBlur={handleBlur("mobile")}
+                    error={touched.mobile ? errors.mobile : undefined}
                   />
                   <Input
                     label="Password"
                     placeholder="Enter your password"
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     autoComplete="password"
                     value={values.password}
                     onChangeText={handleChange("password")}
                     onBlur={handleBlur("password")}
                     error={touched.password ? errors.password : undefined}
+                    rightElement={
+                      <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={12}>
+                        <Ionicons
+                          name={showPassword ? "eye-off-outline" : "eye-outline"}
+                          size={20}
+                          color={colors.textSoft}
+                        />
+                      </Pressable>
+                    }
                   />
                   <Button title="Sign in" loading={mutation.isPending} onPress={() => handleSubmit()} />
                 </>
@@ -128,7 +131,8 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   screenContent: {
     paddingHorizontal: 0,
-    paddingBottom: spacing.xl
+    paddingBottom: spacing.xl,
+    paddingTop: spacing.xl + 40
   },
   background: {
     flex: 1
@@ -145,11 +149,6 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.text,
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 20,
-    elevation: 6
   },
   logo: {
     width: 110,
@@ -216,13 +215,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.92)",
     borderRadius: radius.xl,
     padding: spacing.xl,
-    shadowColor: colors.text,
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 14 },
-    shadowRadius: 24,
-    elevation: 7,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.8)"
+
   },
   cardTitle: {
     color: colors.text,

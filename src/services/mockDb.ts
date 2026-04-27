@@ -1,12 +1,12 @@
 import { mockProperties } from "../data/mockProperties";
-import { AuthCredentials, ListingFormValues, Property, PropertyFilters, User } from "../types";
+import { AuthCredentials, ListingFormValues, ListingAttachment, Property, PropertyFilters, User } from "../types";
 import { formatCategory } from "../utils/format";
 
 const users: Array<User & { password: string }> = [
   {
     id: "user-001",
     name: "Abera M",
-    email: "abera@cheche.et",
+    phone: "+251 911 223 344",
     password: "password123",
     token: "mock-token-demo"
   }
@@ -16,8 +16,35 @@ let properties: Property[] = [...mockProperties];
 
 const delay = (ms = 420) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const createToken = (email: string) => {
-  const seed = Array.from(email).reduce((acc, char) => acc + char.charCodeAt(0), 0);
+const normalizePhone = (value: string) =>
+  value.replace(/[^\d]/g, "").replace(/^251/, "").replace(/^0/, "");
+
+const formatEthiopianPhone = (value: string) => {
+  const digits = normalizePhone(value).replace(/^251/, "");
+
+  if (!digits) {
+    return "+251";
+  }
+
+  const groups = digits.match(/^(\d)(\d{2})(\d{3})(\d{3})$/);
+
+  if (!groups) {
+    return `+251 ${digits}`;
+  }
+
+  return `+251 ${groups[1]}${groups[2]} ${groups[3]} ${groups[4]}`;
+};
+
+const normalizeAttachments = (attachments: ListingAttachment[] | undefined): ListingAttachment[] =>
+  (attachments ?? []).map((attachment) => ({
+    name: attachment.name,
+    uri: attachment.uri,
+    mimeType: attachment.mimeType,
+    size: attachment.size
+  }));
+
+const createToken = (phone: string) => {
+  const seed = Array.from(phone).reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return `mock-token-${seed.toString(36)}-${Date.now().toString(36)}`;
 };
 
@@ -54,19 +81,21 @@ const matchesProperty = (property: Property, filters?: PropertyFilters) => {
 export const mockAuth = {
   async login(credentials: AuthCredentials) {
     await delay();
-    const existing = users.find((item) => item.email.toLowerCase() === credentials.email.toLowerCase());
+    const normalizedPhone = normalizePhone(credentials.mobile);
+    const existing = users.find((item) => normalizePhone(item.phone ?? "") === normalizedPhone);
 
     if (!existing || existing.password !== credentials.password) {
-      throw new Error("Invalid email or password.");
+      throw new Error("Invalid phone number or password.");
     }
 
-    const token = createToken(existing.email);
+    const token = createToken(existing.phone ?? normalizedPhone);
     return {
       token,
+      refreshToken: createToken(`${existing.phone ?? normalizedPhone}-refresh`),
       user: {
         id: existing.id,
         name: existing.name,
-        email: existing.email,
+        phone: formatEthiopianPhone(existing.phone ?? normalizedPhone),
         token
       }
     };
@@ -74,23 +103,23 @@ export const mockAuth = {
 
   async register(credentials: AuthCredentials) {
     await delay();
-    const email = credentials.email.toLowerCase();
-    const duplicate = users.find((item) => item.email.toLowerCase() === email);
+    const normalizedPhone = normalizePhone(credentials.mobile);
+    const duplicate = users.find((item) => normalizePhone(item.phone ?? "") === normalizedPhone);
 
     if (duplicate) {
-      throw new Error("An account with that email already exists.");
+      throw new Error("An account with that phone number already exists.");
     }
 
-    const token = createToken(email);
+    const token = createToken(normalizedPhone);
     const user = {
       id: `user-${String(users.length + 1).padStart(3, "0")}`,
       name: credentials.name ?? "New User",
-      email,
+      phone: formatEthiopianPhone(normalizedPhone),
       token
     };
 
     users.push({ ...user, password: credentials.password });
-    return { token, user };
+    return { token, refreshToken: createToken(`${normalizedPhone}-refresh`), user };
   }
 };
 
@@ -132,6 +161,7 @@ export const mockPropertiesApi = {
       longitude: 38.76,
       agentName: "You",
       agentPhone: "+251 900 000 000",
+      housePlanDocuments: normalizeAttachments(values.housePlanDocuments),
       createdAt: new Date().toISOString()
     };
 
@@ -160,6 +190,8 @@ export const mockPropertiesApi = {
       bedrooms: Number(values.bedrooms),
       bathrooms: Number(values.bathrooms),
       area: Number(values.area)
+      ,
+      housePlanDocuments: normalizeAttachments(values.housePlanDocuments)
     };
 
     properties[index] = updatedProperty;

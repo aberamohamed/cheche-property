@@ -4,17 +4,30 @@ import { Skeleton } from "./Skeleton";
 
 interface LoadingStateProps {
   label?: string;
+  /**
+   * When false, skips the fake title row (for screens that already use a native stack header).
+   */
+  showPlaceholderHeader?: boolean;
 }
 
-export const LoadingState = ({ label = "Loading properties..." }: LoadingStateProps) => (
+export const LoadingState = ({
+  label = "Loading properties...",
+  showPlaceholderHeader = true
+}: LoadingStateProps) => (
   <View style={styles.container}>
-    <View style={styles.header}>
-      <View style={styles.headerCopy}>
-        <Skeleton height={20} width="42%" radius={999} />
+    {showPlaceholderHeader ? (
+      <View style={styles.header}>
+        <View style={styles.headerCopy}>
+          <Skeleton height={20} width="42%" radius={999} />
+          <Text style={styles.label}>{label}</Text>
+        </View>
+        <Skeleton height={34} width={84} radius={999} />
+      </View>
+    ) : (
+      <View style={styles.embeddedIntro}>
         <Text style={styles.label}>{label}</Text>
       </View>
-      <Skeleton height={34} width={84} radius={999} />
-    </View>
+    )}
 
     <View style={styles.card}>
       <Skeleton height={180} radius={radius.xl} />
@@ -48,8 +61,12 @@ export const LoadingState = ({ label = "Loading properties..." }: LoadingStatePr
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     gap: spacing.lg
+  },
+  embeddedIntro: {
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.lg
   },
   header: {
     flexDirection: "row",

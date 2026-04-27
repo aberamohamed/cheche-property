@@ -4,6 +4,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -57,11 +58,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     savePrefs({ theme: id });
   }, []);
 
-  const value: PreferencesState = {
-    theme,
-    isBlackTheme: theme === 4,
-    setTheme,
-  };
+  const value = useMemo<PreferencesState>(
+    () => ({
+      theme,
+      isBlackTheme: theme === 4,
+      setTheme
+    }),
+    [setTheme, theme]
+  );
 
   return (
     <PreferencesContext.Provider value={value}>

@@ -5,10 +5,11 @@ import { User } from "../types";
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   hydrated: boolean;
   setHydrated: (value: boolean) => void;
-  setAuth: (payload: { token: string; user: User }) => void;
+  setAuth: (payload: { token: string; refreshToken: string; user: User }) => void;
   logout: () => void;
 }
 
@@ -16,11 +17,12 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
+      refreshToken: null,
       user: null,
       hydrated: false,
       setHydrated: (value) => set({ hydrated: value }),
-      setAuth: ({ token, user }) => set({ token, user }),
-      logout: () => set({ token: null, user: null })
+      setAuth: ({ token, refreshToken, user }) => set({ token, refreshToken, user }),
+      logout: () => set({ token: null, refreshToken: null, user: null })
     }),
     {
       name: "relty-auth",

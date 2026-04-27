@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { Animated, Easing, StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "src/constants/Colors";
 
@@ -10,57 +10,54 @@ interface SkeletonProps {
   style?: StyleProp<ViewStyle>;
 }
 
+/** Pastel shimmer band — reads as “loading” without washing the whole UI in brand pink */
+const SHIMMER_COLORS = [
+  "rgba(0,0,0,0)",
+  "rgba(227, 0, 116, 0.14)",
+  "rgba(56, 189, 248, 0.22)",
+  "rgba(52, 211, 153, 0.2)",
+  "rgba(250, 204, 21, 0.24)",
+  "rgba(255, 255, 255, 0.92)",
+  "rgba(167, 139, 250, 0.22)",
+  "rgba(251, 113, 133, 0.16)",
+  "rgba(0,0,0,0)"
+] as const;
+
+const SHIMMER_LOCATIONS = [0, 0.12, 0.28, 0.4, 0.52, 0.62, 0.74, 0.88, 1] as const;
+
 export const Skeleton = ({ height, width = "100%", radius = 16, style }: SkeletonProps) => {
-  const opacity = useRef(new Animated.Value(0.45)).current;
   const shimmer = useRef(new Animated.Value(-1)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, {
-          toValue: 0.9,
-          duration: 900,
-          useNativeDriver: true
-        }),
-        Animated.timing(opacity, {
-          toValue: 0.45,
-          duration: 900,
-          useNativeDriver: true
-        })
-      ])
-    );
-
-    animation.start();
     const shimmerAnimation = Animated.loop(
       Animated.timing(shimmer, {
         toValue: 1,
-        duration: 1200,
+        duration: 1700,
+        easing: Easing.inOut(Easing.quad),
         useNativeDriver: true
       })
     );
 
     shimmerAnimation.start();
     return () => {
-      animation.stop();
       shimmerAnimation.stop();
     };
-  }, [opacity, shimmer]);
+  }, [shimmer]);
 
   const shimmerTranslate = shimmer.interpolate({
     inputRange: [-1, 1],
-    outputRange: [-140, 140]
+    outputRange: [-220, 220]
   });
 
   return (
     <View style={{ width, height, borderRadius: radius, overflow: "hidden" }}>
-      <Animated.View
+      <View
         style={[
           styles.base,
           {
             width: "100%",
             height: "100%",
-            borderRadius: radius,
-            opacity
+            borderRadius: radius
           },
           style
         ]}
@@ -71,13 +68,13 @@ export const Skeleton = ({ height, width = "100%", radius = 16, style }: Skeleto
           styles.shimmerMask,
           {
             borderRadius: radius,
-            opacity,
             transform: [{ translateX: shimmerTranslate }]
           }
         ]}
       >
         <LinearGradient
-          colors={["transparent", "rgba(255,255,255,0.9)", "transparent"]}
+          colors={[...SHIMMER_COLORS]}
+          locations={[...SHIMMER_LOCATIONS]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={styles.shimmer}
@@ -89,17 +86,18 @@ export const Skeleton = ({ height, width = "100%", radius = 16, style }: Skeleto
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: Colors.light.primaryLight,
-    borderWidth: 1,
-    borderColor: "rgba(227, 0, 116, 0.14)",
+    backgroundColor: Colors.palette.neutral[200],
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(15, 23, 42, 0.08)",
     overflow: "hidden"
   },
   shimmerMask: {
     ...StyleSheet.absoluteFillObject,
-    overflow: "hidden"
+    overflow: "hidden",
+    opacity: 0.95
   },
   shimmer: {
     flex: 1,
-    width: 180
+    width: 280
   }
 });

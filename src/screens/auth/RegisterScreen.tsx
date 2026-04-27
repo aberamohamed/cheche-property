@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { useRouter } from "expo-router";
@@ -7,12 +8,15 @@ import { Screen } from "../../components/Screen";
 import { colors, fontSizes, radius, spacing } from "../../utils/theme";
 import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
+import { PhoneInput } from "../../components/PhoneInput";
 import { useRegisterMutation } from "../../hooks/useAuth";
 import { useAuthStore } from "../../store/authStore";
 
 const schema = Yup.object({
   name: Yup.string().min(2, "Enter your full name").required("Name is required"),
-  email: Yup.string().email("Enter a valid email").required("Email is required"),
+  mobile: Yup.string()
+    .matches(/^9\d{8}$/, "Enter a valid Ethiopian phone number")
+    .required("Phone number is required"),
   password: Yup.string().min(6, "At least 6 characters").required("Password is required"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Passwords must match")
@@ -23,6 +27,7 @@ export const RegisterScreen = () => {
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
   const mutation = useRegisterMutation();
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -48,12 +53,12 @@ export const RegisterScreen = () => {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Register</Text>
         <Formik
-          initialValues={{ name: "", email: "", password: "", confirmPassword: "" }}
+          initialValues={{ name: "", mobile: "", password: "", confirmPassword: "" }}
           validationSchema={schema}
           onSubmit={(values) =>
             mutation.mutate({
               name: values.name,
-              email: values.email,
+              mobile: values.mobile,
               password: values.password
             })
           }
@@ -68,31 +73,38 @@ export const RegisterScreen = () => {
                 onBlur={handleBlur("name")}
                 error={touched.name ? errors.name : undefined}
               />
-              <Input
-                label="Email"
-                placeholder="you@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                value={values.email}
-                onChangeText={handleChange("email")}
-                onBlur={handleBlur("email")}
-                error={touched.email ? errors.email : undefined}
+              <PhoneInput
+                label="Phone Number"
+                placeholder="9XXXXXXXX"
+                helperText="Enter without country code (e.g., 911234567)"
+                value={values.mobile}
+                onChangeText={handleChange("mobile")}
+                onBlur={handleBlur("mobile")}
+                error={touched.mobile ? errors.mobile : undefined}
               />
               <Input
                 label="Password"
                 placeholder="Create a password"
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 autoComplete="password"
                 value={values.password}
                 onChangeText={handleChange("password")}
                 onBlur={handleBlur("password")}
                 error={touched.password ? errors.password : undefined}
+                rightElement={
+                  <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={12}>
+                    <Ionicons
+                      name={showPassword ? "eye-off-outline" : "eye-outline"}
+                      size={20}
+                      color={colors.textSoft}
+                    />
+                  </Pressable>
+                }
               />
               <Input
                 label="Confirm password"
                 placeholder="Repeat password"
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 value={values.confirmPassword}
                 onChangeText={handleChange("confirmPassword")}
                 onBlur={handleBlur("confirmPassword")}

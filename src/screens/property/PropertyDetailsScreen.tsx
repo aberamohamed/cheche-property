@@ -1,4 +1,5 @@
 import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "../../components/Screen";
@@ -16,6 +17,7 @@ import { formatCategory, formatCurrency, formatDate } from "../../utils/format";
 
 export const PropertyDetailsScreen = () => {
   const router = useRouter();
+  const headerHeight = useHeaderHeight();
   const token = useAuthStore((state) => state.token);
   const params = useLocalSearchParams<{ propertyId?: string; agentName?: string }>();
   const propertyId = typeof params.propertyId === "string" ? params.propertyId : undefined;
@@ -28,9 +30,14 @@ export const PropertyDetailsScreen = () => {
     return <Redirect href="/login" />;
   }
 
+  /** iOS stack uses a transparent header (`stackHeaderOptions`); body starts at y=0 and must clear the header. */
+  const belowHeaderPadding = {
+    paddingTop: Platform.OS === "ios" ? headerHeight + spacing.sm : spacing.md
+  };
+
   if (error) {
     return (
-      <Screen scrollable={false}>
+      <Screen scrollable={false} contentStyle={belowHeaderPadding}>
         <EmptyState
           title="Property not available"
           description="That listing might have been removed or the data did not load correctly."
@@ -43,15 +50,15 @@ export const PropertyDetailsScreen = () => {
 
   if (showLoading || (isLoading && !data)) {
     return (
-      <Screen scrollable={false}>
-        <LoadingState label="Loading property details..." />
+      <Screen scrollable={false} contentStyle={belowHeaderPadding}>
+        <LoadingState label="Loading property details..." showPlaceholderHeader={false} />
       </Screen>
     );
   }
 
   if (!data) {
     return (
-      <Screen scrollable={false}>
+      <Screen scrollable={false} contentStyle={belowHeaderPadding}>
         <EmptyState
           title="Property not available"
           description="That listing might have been removed or the data did not load correctly."

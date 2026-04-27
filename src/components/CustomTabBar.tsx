@@ -24,11 +24,11 @@ export default function CustomTabBar({ state, descriptors, navigation }: BottomT
     .map((name) => state.routes.find((route) => route.name === name))
     .filter((route): route is (typeof state.routes)[number] => Boolean(route));
 
-  const bottomOffset = Math.max(insets.bottom, 8);
+  const padBottom = Math.max(insets.bottom, 6);
 
   return (
     <View pointerEvents="box-none" style={styles.root}>
-      <View style={[styles.shell, { bottom: bottomOffset }]}>
+      <View style={[styles.shell, { paddingBottom: padBottom }]}>
         {Platform.OS === "ios" ? (
           <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill} />
         ) : (
@@ -87,18 +87,19 @@ const styles = StyleSheet.create({
   },
   shell: {
     position: "absolute",
-    left: 12,
-    right: 12,
-    height: 60,
-    borderRadius: 28,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    minHeight: 56,
+    borderRadius: 0,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.55)",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(0, 0, 0, 0.08)",
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 18,
-    elevation: 10
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: -2 },
+    shadowRadius: 6,
+    elevation: 12
   },
   androidBackground: {
     ...StyleSheet.absoluteFillObject,

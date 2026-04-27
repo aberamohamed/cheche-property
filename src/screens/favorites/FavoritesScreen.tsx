@@ -13,6 +13,8 @@ import { EmptyState } from "../../components/EmptyState";
 import { LoadingState } from "../../components/LoadingState";
 import { PropertyCard } from "../../components/PropertyCard";
 import { SearchBar } from "../../components/SearchBar";
+import { useTabsScrollBlurTarget } from "../../contexts/TabsScrollBlurContext";
+import { tabHeaderFabContentPaddingTop } from "../../utils/tabHeaderFab";
 
 export const FavoritesScreen = () => {
   const router = useRouter();
@@ -23,7 +25,11 @@ export const FavoritesScreen = () => {
   const showLoading = useMinimumDisplay(isLoading, 3000);
   const [query, setQuery] = useState("");
   const [stickySearch, setStickySearch] = useState(false);
-  const searchBarYRef = useRef(0);
+  const stickyScrollThresholdRef = useRef(0);
+  const tabBlurTargetRef = useTabsScrollBlurTarget();
+  /** Android: `TabHeaderFab` owns the tab `blurTarget`; avoid a second BlurView on the same ref. */
+  const searchChromeBlurTargetRef =
+    Platform.OS === "ios" ? tabBlurTargetRef : undefined;
 
   const filteredFavorites = useMemo(() => {
     if (!data) return [];
@@ -71,7 +77,7 @@ export const FavoritesScreen = () => {
 
   const handleScroll = (event: NativeSyntheticEvent<any>) => {
     const y = event.nativeEvent.contentOffset.y;
-    const threshold = searchBarYRef.current;
+    const threshold = stickyScrollThresholdRef.current;
     if (threshold <= 0) return;
 
     const nextSticky = y >= threshold - 4;
@@ -84,13 +90,44 @@ export const FavoritesScreen = () => {
     <View style={styles.page}>
       <Screen scrollable={false} horizontalPadding={false}>
         <ScrollView
-          stickyHeaderIndices={[1]}
+          style={styles.scroll}
+          stickyHeaderIndices={[0]}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
           onScroll={handleScroll}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: tabHeaderFabContentPaddingTop(insets.top) }
+          ]}
         >
-          <View style={[styles.heroWrap, { paddingTop: (Platform.OS === 'ios' && Number(Platform.Version) >= 26) ? insets.top + spacing.lg + 20 : spacing.lg + 10 }]}>
+          <View
+            style={[
+              styles.stickyShell,
+              stickySearch && {
+                paddingTop: 2,
+                marginHorizontal: -layout.pagePadding,
+                paddingHorizontal: layout.pagePadding,
+                borderRadius: 0,
+                borderBottomWidth: 1,
+                borderBottomColor: "rgba(255,255,255,0.1)",
+                backgroundColor: "transparent"
+              }, stickySearch ? styles.stickyShellActive : null
+            ]}
+          >
+            <SearchBar
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search your favorites..."
+              blurTargetRef={searchChromeBlurTargetRef ?? undefined}
+            />
+          </View>
+
+          <View
+            style={styles.heroWrap}
+            onLayout={(event) => {
+              stickyScrollThresholdRef.current = event.nativeEvent.layout.y;
+            }}
+          >
             <LinearGradient
               colors={[
                 Colors.palette.primary[700],
@@ -107,30 +144,6 @@ export const FavoritesScreen = () => {
                 Easily revisit and compare the homes that caught your eye in Addis Ababa.
               </Text>
             </LinearGradient>
-          </View>
-
-          <View
-            onLayout={(event) => {
-              searchBarYRef.current = event.nativeEvent.layout.y;
-            }}
-            style={[
-              styles.stickyShell,
-              stickySearch && {
-                paddingTop: insets.top + spacing.sm,
-                marginHorizontal: -layout.pagePadding,
-                paddingHorizontal: layout.pagePadding,
-                borderRadius: 0,
-                borderBottomWidth: 1,
-                borderBottomColor: "rgba(255,255,255,0.1)",
-                backgroundColor: "transparent"
-              }, stickySearch ? styles.stickyShellActive : null
-            ]}
-          >
-            <SearchBar
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search your favorites..."
-            />
           </View>
 
           <View style={styles.resultBlock}>
@@ -168,6 +181,9 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: colors.background
+  },
+  scroll: {
+    flex: 1
   },
   content: {
     paddingHorizontal: layout.pagePadding,
